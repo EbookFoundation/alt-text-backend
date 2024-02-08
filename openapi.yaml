@@ -1,0 +1,446 @@
+openapi: 3.0.3
+info:
+  title: Alt-text Backend API
+  description: |-
+    This is the Alt-text Backend API based on the OpenAPI 3.0 specification.
+  # termsOfService: http://swagger.io/terms/
+  contact:
+    email: da.cruz@aol.com
+  # license:
+  #   name: Apache 2.0
+  #   url: http://www.apache.org/licenses/LICENSE-2.0.html
+  version: 1.0.11
+externalDocs:
+  description: Find out more about Alt-text
+  url: https://github.com/EbookFoundation/alt-text
+# servers:
+#   - url: https://petstore3.swagger.io/api/v3
+tags:
+  - name: Books
+    description: Everything regarding books
+  - name: Images
+    description: Everything regarding images
+paths:
+  /books:
+    get:
+      tags:
+        - Books
+      summary: Get a list of books.
+      description: Get a list of book objects given various options.
+      operationId: getBooks
+      parameters:
+        - name: titleQ
+          in: query
+          description: String to match the title to.
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Max number of books to return.
+          required: false
+          explode: true
+          schema:
+            type: integer
+        - name: skip
+          in: query
+          description: Number of books to skip.
+          required: false
+          explode: true
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Book'
+        '500':
+          description: Internal Server Error
+    post:
+      tags:
+        - Books
+      summary: Add a book.
+      description: Submit a new book for analyzation and store results in database.
+      operationId: addBook
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Title of the book.
+                author:
+                  type: string
+                  description: Author of the book.
+                description:
+                  type: string
+                  description: Description of the book (optional).
+                book:
+                  type: string
+                  description: Zip file of the book.
+                  format: binary
+                cover:
+                  type: string
+                  description: Cover image for the book (optional).
+                  format: binary
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '500':
+          description: Internal Server Error
+  /books/{bookid}:
+    parameters:
+      - name: bookid
+        in: path
+        description: Id of the book.
+        required: true
+        explode: true
+        schema:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+    get:
+      tags:
+        - Books
+      summary: Get a book.
+      description: Get a book object with basic information by its id.
+      operationId: getBook
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '500':
+          description: Internal Server Error
+    patch:
+      tags:
+        - Books
+      summary: Update a book's metadata.
+      description: Update a book's metadata by its id.
+      operationId: updateBook
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: Title of the book (optional).
+                author:
+                  type: string
+                  description: Author of the book (optional).
+                description:
+                  type: string
+                  description: Description of the book (optional).
+                cover:
+                  type: string
+                  description: Cover image for the book (optional).
+                  format: binary
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+            application/xml:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '500':
+          description: Internal Server Error
+    # TODO: POST ROUTE TO UPLOAD NEW BOOK FILE
+    put:
+      tags:
+      - Books
+      summary: Re-analyze an entire book.
+      description: Re-analyze an entire book and overwrite current image data by its id.
+      operationId: analyzeBook
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '500':
+          description: Internal Server Error
+    delete:
+      tags:
+        - Books
+      summary: Delete a book.
+      description: Delete a book by its id.
+      operationId: deleteBook
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '500':
+          description: Internal Server Error
+  /books/{bookid}/export:
+    parameters:
+      - name: bookid
+        in: path
+        description: Id of the book.
+        required: true
+        explode: true
+        schema:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+    get:
+      tags:
+        - Books
+      summary: Export a book.
+      description: Get a zip download of a book with current alt placed into images.
+      operationId: exportBook
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/zip:
+              schema:
+                type: string
+                example: |-
+                  content of the file
+          # headers:
+          #   Content-Disposition:
+          #     description: File name to prompt for download
+          #     schema:
+          #       type: string
+          #     example: attachment; filename="example.txt"
+        '500':
+          description: Internal Server Error
+  /books/{bookid}/images:
+    parameters:
+      - name: bookid
+        in: path
+        description: Id of the book.
+        required: true
+        explode: true
+        schema:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+    get:
+      tags:
+        - Images
+      summary: Get images in a book.
+      description: Get a list of images in a book by its id.
+      operationId: imagesFromBook
+      parameters:
+        - name: srcQ
+          in: query
+          description: String to match the title to.
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Max number of images to return.
+          required: false
+          explode: true
+          schema:
+            type: integer
+        - name: skip
+          in: query
+          description: Number of images to skip.
+          required: false
+          explode: true
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Image'
+        '500':
+          description: Internal Server Error
+  /books/{bookid}/{src}:
+    parameters:
+      - name: bookid
+        in: path
+        description: Id of the book.
+        required: true
+        explode: true
+        schema:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+      - name: src
+        in: path
+        description: Src of the image.
+        required: true
+        explode: true
+        schema:
+          type: string
+          example: "images/cover.png"
+    get:
+      tags:
+        - Images
+      summary: Get an image by src given a book.
+      description: Get an image information by src name given a book id.
+      operationId: getImageBySrc
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+        '500':
+          description: Internal Server Error
+    patch:
+      tags:
+        - Images
+      summary: Update an image's metadata.
+      description: Update an image's related data (e.g. alt, beforeContext, afterContext).
+      operationId: updateImageBySrc
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                alt:
+                  type: string
+                  description: New alt-text for the image (optional).
+                beforeContext:
+                  type: string
+                  description: New beforeContext for the image (optional).
+                afterContext:
+                  type: string
+                  description: New afterContext for the image (optional).
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+        '500':
+          description: Internal Server Error
+    put:
+      tags:
+        - Images
+      summary: Re-analyze an image.
+      description: Generate an image's alt-text (written to genAlt field in image object).
+      operationId: analyzeImage
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Image'
+        '500':
+          description: Internal Server Error
+  /images/{hash}:
+    parameters:
+      - name: hash
+        in: path
+        description: Hash value of the image.
+        required: true
+        explode: true
+        schema:
+          type: string
+    get:
+      tags:
+        - Images
+      summary: Get images by hash.
+      description: Get a list of images from any book by its hash.
+      operationId: getImagesByHash
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Image'
+        '500':
+          description: Internal Server Error
+  
+components:
+  schemas:
+    Book:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        title:
+          type: string
+          example: "Diary of an Oxygen Thief"
+        author:
+          type: string
+          example: "Anonymous"
+        description:
+          type: string
+          example: "Hurt people hurt people."
+        size:
+          type: string
+          example: "1.16MB"
+        status:
+          type: string
+          example: "processing"
+          enum: ["available", "processing", "deleted"]
+        numImages:
+          type: integer
+          example: 4
+    Image:
+      type: object
+      properties:
+        src:
+          type: string
+          example: "images/cover.png"
+        hash:
+          type: string
+          example: ""
+        size:
+          type: string
+          example: "24KB"
+        alt:
+          type: string
+          example: ""
+        originalAlt:
+          type: string
+          example: ""
+        genAlt:
+          type: string
+          example: ""
+        genImageCaption:
+          type: string
+          example: ""
+        ocr:
+          type: string
+          example: ""
+        beforeContext:
+          type: string
+          example: ""
+        afterContext:
+          type: string
+          example: ""

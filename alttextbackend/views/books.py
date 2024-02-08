@@ -20,9 +20,7 @@ class BooksView(APIView):
     serializer_class = BookSerializer
 
     def get(self, request, *args, **kwargs):
-        # TODO: get's list of books given limits
-        data = {"books": []}
-        return Response(data, status=status.HTTP_200_OK)
+        return Response({"TODO": "TODO"}, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         # validate request data
@@ -41,6 +39,10 @@ class BooksView(APIView):
         books_path = "./books/"
         default_storage.save(f"{books_path}{str(id)}.zip", ContentFile(file.read()))
 
+        # TODO: ensure book has valid root html file
+
+        # TODO: start analyzing book
+
         # save cover image
         covers_path = "./covers/"
         default_storage.save(
@@ -55,30 +57,3 @@ class BooksView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
-
-
-# class ImageSerializer(serializers.Serializer):
-#     imagedata = serializers.CharField()
-#     beforeContext = serializers.CharField(required=False)
-#     afterContext = serializers.CharField(required=False)
-
-# class ImagesView(APIView):
-#     def get(self, request, *args, **kwargs):
-#         data = {"images": "this is an image"}
-#         return Response(data, status=status.HTTP_200_OK)
-
-#     def post(self, request, *args, **kwargs):
-#         serializer = ImageSerializer(data=request.data)
-#         if serializer.is_valid():
-#             validated_data = serializer.validated_data
-#             res = {"book": validated_data.get("imagedata")}
-#             if validated_data.get("beforeContext"):
-#                 res["beforeContext"] = validated_data.get("beforeContext")
-#             if validated_data.get("afterContext"):
-#                 res["afterContext"] = validated_data.get("afterContext")
-#             return Response(
-#                 res,
-#                 status=status.HTTP_201_CREATED,
-#             )
-#         else:
-#             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

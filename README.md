@@ -21,6 +21,7 @@ Gets a list of books from database
 ```
 [
   {
+    uuid: string,
     title: string,
     description: string,
     cover: string,
@@ -46,6 +47,7 @@ Adds a book to the database and starts initial processing
 
 ```
 {
+    uuid: string,
     title: string,
     description: string,
     cover: string,
@@ -59,6 +61,14 @@ Adds a book to the database and starts initial processing
 #### PATCH
 
 #### DELETE
+
+### /books/:bookid/export
+
+#### GET
+
+### /books/:bookid/analyze
+
+#### GET
 
 ### /books/:bookid/images
 
