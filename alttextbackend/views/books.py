@@ -8,23 +8,55 @@ from django.core.files.base import ContentFile
 from uuid import uuid4
 
 
-class BookSerializer(serializers.Serializer):
-    title = serializers.CharField()
-    description = serializers.CharField()
-    cover = serializers.ImageField()
-    file = serializers.FileField()
+class GetBooksSerializer(serializers.Serializer):
+    titleQ = serializers.CharField(required=False)
+    authorQ = serializers.CharField(required=False)
+    sortBy = serializers.ChoiceField(choices=['title', 'author'], style={'base_template': 'radio.html'}, default = 'title')
+    sortOrder = serializers.ChoiceField(choices=['asc', 'desc'], style={'base_template': 'radio.html'}, default = 'asc')
+    limit = serializers.IntegerField(min_value=1, required=False)
+    skip = serializers.IntegerField(min_value=0, required=False)
 
+class AddBookSerializer(serializers.Serializer):
+    title = serializers.CharField(required=True, allow_blank=False)
+    author = serializers.CharField(required=True, allow_blank=False)
+    description = serializers.CharField(required=False, allow_blank=True)
+    file = serializers.FileField(required=True)
+    cover = serializers.ImageField(required=False)
 
 class BooksView(APIView):
     parser_classes = (FormParser, MultiPartParser)
-    serializer_class = BookSerializer
+    serializer_class = AddBookSerializer
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return GetBooksSerializer
+        elif self.request.method == 'POST':
+            return AddBookSerializer
+        return super().get_serializer_class()
 
     def get(self, request, *args, **kwargs):
-        return Response({"TODO": "TODO"}, status=status.HTTP_200_OK)
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(data=request.query_params)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # Access validated data
+        validated_data = serializer.validated_data
+        title_query = validated_data.get('titleQ')
+        author_query = validated_data.get('authorQ')
+        sort_by = validated_data.get('sortBy')
+        sort_order = validated_data.get('sortOrder')
+        limit = validated_data.get('limit')
+        skip = validated_data.get('skip')
+
+        # TODO: perform logic
+
+        # TODO: return books
+        return Response(validated_data, status=status.HTTP_200_OK)
 
     def post(self, request, *args, **kwargs):
         # validate request data
-        serializer = self.serializer_class(data=request.data)
+        serializer_class = self.get_serializer_class()
+        serializer = serializer_class(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         validated_data = serializer.validated_data
@@ -41,7 +73,7 @@ class BooksView(APIView):
 
         # TODO: ensure book has valid root html file
 
-        # TODO: start analyzing book
+        # TODO: analyze book and images, store them in database
 
         # save cover image
         covers_path = "./covers/"

@@ -36,6 +36,31 @@ paths:
           explode: true
           schema:
             type: string
+        - name: authorQ
+          in: query
+          description: String to match the author to.
+          required: false
+          explode: true
+          schema:
+            type: string
+        - name: sortBy
+          in: query
+          description: Field to sort by.
+          required: false
+          explode: true
+          schema:
+            type: string
+            enum: ["title", "author"]
+            default: "title"
+        - name: sortOrder
+          in: query
+          description: Order to sort by.
+          required: false
+          explode: true
+          schema:
+            type: string
+            enum: ["asc", "desc"]
+            default: "asc"
         - name: limit
           in: query
           description: Max number of books to return.
@@ -164,13 +189,38 @@ paths:
                 $ref: '#/components/schemas/Book'
         '500':
           description: Internal Server Error
-    # TODO: POST ROUTE TO UPLOAD NEW BOOK FILE
     put:
       tags:
       - Books
       summary: Re-analyze an entire book.
       description: Re-analyze an entire book and overwrite current image data by its id.
       operationId: analyzeBook
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Book'
+        '500':
+          description: Internal Server Error
+    post:
+      tags:
+      - Books
+      summary: Upload a new book file to a book object.
+      description: Upload a new book to a given book object (by its id), and re-analyze it (essentially creating a new book, except keeping the same bookid).
+      operationId: overwriteBook
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                book:
+                  type: string
+                  description: Zip file of the book.
+                  format: binary
       responses:
         '200':
           description: Successful operation
@@ -278,7 +328,7 @@ paths:
                   $ref: '#/components/schemas/Image'
         '500':
           description: Internal Server Error
-  /books/{bookid}/{src}:
+  /books/{bookid}/image:
     parameters:
       - name: bookid
         in: path
@@ -289,7 +339,7 @@ paths:
           type: string
           example: "123e4567-e89b-12d3-a456-426614174000"
       - name: src
-        in: path
+        in: query
         description: Src of the image.
         required: true
         explode: true
@@ -347,7 +397,7 @@ paths:
         - Images
       summary: Re-analyze an image.
       description: Generate an image's alt-text (written to genAlt field in image object).
-      operationId: analyzeImage
+      operationId: analyzeImageBySrc
       responses:
         '200':
           description: Successful operation

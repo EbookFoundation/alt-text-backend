@@ -21,16 +21,16 @@ from .views.books import BooksView
 from .views.books_bookid import BooksBookidView
 from .views.books_bookid_export import BooksBookidExportView
 from .views.books_bookid_images import BooksBookidImagesView
-from .views.books_bookid_src import BooksBookidSrcView
+from .views.books_bookid_image import BooksBookidImageView
 from .views.images_hash import ImagesHashView
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
     # path("api-auth/", include("rest_framework.urls")),
     path("books", BooksView.as_view()),
-    path("books/<str:bookId>", BooksBookidView.as_view()),
-    path("books/<str:bookId>/export", BooksBookidExportView.as_view()),
-    path("books/<str:bookId>/images", BooksBookidImagesView.as_view()),
-    path("books/<str:bookId>/<str:src>", BooksBookidSrcView.as_view()),
+    path("books/<str:bookid>", BooksBookidView.as_view()),
+    path("books/<str:bookid>/export", BooksBookidExportView.as_view()),
+    path("books/<str:bookid>/images", BooksBookidImagesView.as_view()),
+    path("books/<str:bookid>/<str:src>", BooksBookidImageView.as_view()),
     path("images/<str:hash>", ImagesHashView.as_view()),
 ]

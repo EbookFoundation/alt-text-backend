@@ -7,8 +7,19 @@ from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
 from uuid import uuid4
 
+class ImagesFromBookSerializer(serializers.Serializer):
+    bookid = serializers.CharField(required=True)
+
 class BooksBookidImagesView(APIView):
     parser_classes = (FormParser, MultiPartParser)
+    serializer_class = ImagesFromBookSerializer
 
     def get(self, request, *args, **kwargs):
-        return Response({"TODO": "TODO"}, status=status.HTTP_200_OK)
+        serializer = self.serializer_class(data={"bookid": kwargs.get('bookid')})
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        validated_data = serializer.validated_data
+
+        # TODO: IMPLEMENT LOGIC
+
+        return Response(validated_data, status=status.HTTP_200_OK)
