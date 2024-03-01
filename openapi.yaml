@@ -3,18 +3,12 @@ info:
   title: Alt-text Backend API
   description: |-
     This is the Alt-text Backend API based on the OpenAPI 3.0 specification.
-  # termsOfService: http://swagger.io/terms/
   contact:
     email: da.cruz@aol.com
-  # license:
-  #   name: Apache 2.0
-  #   url: http://www.apache.org/licenses/LICENSE-2.0.html
   version: 1.0.11
 externalDocs:
   description: Find out more about Alt-text
   url: https://github.com/EbookFoundation/alt-text
-# servers:
-#   - url: https://petstore3.swagger.io/api/v3
 tags:
   - name: Books
     description: Everything regarding books
@@ -36,31 +30,6 @@ paths:
           explode: true
           schema:
             type: string
-        - name: authorQ
-          in: query
-          description: String to match the author to.
-          required: false
-          explode: true
-          schema:
-            type: string
-        - name: sortBy
-          in: query
-          description: Field to sort by.
-          required: false
-          explode: true
-          schema:
-            type: string
-            enum: ["title", "author"]
-            default: "title"
-        - name: sortOrder
-          in: query
-          description: Order to sort by.
-          required: false
-          explode: true
-          schema:
-            type: string
-            enum: ["asc", "desc"]
-            default: "asc"
         - name: limit
           in: query
           description: Max number of books to return.
@@ -100,15 +69,12 @@ paths:
             schema:
               type: object
               properties:
+                id:
+                  type: string
+                  description: Id of the book (optional).
                 title:
                   type: string
                   description: Title of the book.
-                author:
-                  type: string
-                  description: Author of the book.
-                description:
-                  type: string
-                  description: Description of the book (optional).
                 book:
                   type: string
                   description: Zip file of the book.
@@ -167,12 +133,6 @@ paths:
                 title:
                   type: string
                   description: Title of the book (optional).
-                author:
-                  type: string
-                  description: Author of the book (optional).
-                description:
-                  type: string
-                  description: Description of the book (optional).
                 cover:
                   type: string
                   description: Cover image for the book (optional).
@@ -195,32 +155,25 @@ paths:
       summary: Re-analyze an entire book.
       description: Re-analyze an entire book and overwrite current image data by its id.
       operationId: analyzeBook
-      responses:
-        '200':
-          description: Successful operation
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Book'
-        '500':
-          description: Internal Server Error
-    post:
-      tags:
-      - Books
-      summary: Upload a new book file to a book object.
-      description: Upload a new book to a given book object (by its id), and re-analyze it (essentially creating a new book, except keeping the same bookid).
-      operationId: overwriteBook
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                book:
-                  type: string
-                  description: Zip file of the book.
-                  format: binary
+      parameters:
+        - name: missingOnly
+          in: query
+          description: If analyzing on upload, whether to analyze only the images without alt-text.
+          required: false
+          explode: true
+          schema:
+            type: boolean
+            example: true
+            default: true
+        - name: waitForAnalysis
+          in: query
+          description: Whether to wait for the analysis to complete before returning a response.
+          required: false
+          explode: true
+          schema:
+            type: boolean
+            example: false
+            default: false
       responses:
         '200':
           description: Successful operation
@@ -255,6 +208,15 @@ paths:
         schema:
           type: string
           example: "123e4567-e89b-12d3-a456-426614174000"
+      - name: name
+        in: query
+        description: Alternative name for file download. 
+        required: false
+        explode: true
+        schema:
+          type: string
+          default: "{bookid}"
+          example: "harry_potter"
     get:
       tags:
         - Books
@@ -270,12 +232,6 @@ paths:
                 type: string
                 example: |-
                   content of the file
-          # headers:
-          #   Content-Disposition:
-          #     description: File name to prompt for download
-          #     schema:
-          #       type: string
-          #     example: attachment; filename="example.txt"
         '500':
           description: Internal Server Error
   /books/{bookid}/images:
@@ -383,6 +339,9 @@ paths:
                 afterContext:
                   type: string
                   description: New afterContext for the image (optional).
+                additionalContext:
+                  type: string
+                  description: New additionalContext for the image (optional).
       responses:
         '200':
           description: Successful operation
@@ -398,6 +357,16 @@ paths:
       summary: Re-analyze an image.
       description: Generate an image's alt-text (written to genAlt field in image object).
       operationId: analyzeImageBySrc
+      parameters:
+        - name: waitForAnalysis
+          in: query
+          description: Whether to wait for the analysis to complete before returning a response (default = false).
+          required: false
+          explode: true
+          schema:
+            type: boolean
+            example: false
+            default: false
       responses:
         '200':
           description: Successful operation
@@ -445,12 +414,6 @@ components:
         title:
           type: string
           example: "Diary of an Oxygen Thief"
-        author:
-          type: string
-          example: "Anonymous"
-        description:
-          type: string
-          example: "Hurt people hurt people."
         size:
           type: string
           example: "1.16MB"
@@ -458,39 +421,53 @@ components:
           type: string
           example: "processing"
           enum: ["available", "processing", "deleted"]
+          default: "available"
         numImages:
           type: integer
           example: 4
     Image:
       type: object
       properties:
+        bookid:
+          type: string
+          example: "123e4567-e89b-12d3-a456-426614174000"
         src:
           type: string
           example: "images/cover.png"
         hash:
           type: string
           example: ""
-        size:
+        status:
           type: string
-          example: "24KB"
+          example: "processing"
+          enum: ["available", "processing", "deleted"]
+          default: "available"
         alt:
           type: string
           example: ""
+          default: "originalAlt"
         originalAlt:
           type: string
           example: ""
         genAlt:
           type: string
           example: ""
+          default: ""
         genImageCaption:
           type: string
           example: ""
+          default: ""
         ocr:
           type: string
           example: ""
+          default: ""
         beforeContext:
           type: string
           example: ""
         afterContext:
           type: string
           example: ""
+        additionalContext:
+          type: string
+          example: ""
+          default: ""
