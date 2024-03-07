@@ -5,8 +5,9 @@ import bs4
 from alttext import alttext
 from alttext.descengine.bliplocal import BlipLocal
 from alttext.descengine.replicateapi import ReplicateAPI
-from alttext.langengine.privategpt import PrivateGPT
 from alttext.ocrengine.tesseract import Tesseract
+from alttext.langengine.openaiapi import OpenAIAPI
+from alttext.langengine.privategpt import PrivateGPT
 from django.core.files.storage import default_storage
 
 from .postgres import books, images
@@ -37,6 +38,10 @@ def createAnalyzer():
     match os.environ["LANG_ENGINE"].lower():
         case "privategpt":
             langEngine = PrivateGPT(os.environ["PRIVATEGPT_HOST"])
+        case "openaiapi":
+            langEngine = OpenAIAPI(
+                os.environ["OPENAI_API_KEY"], os.environ["OPENAI_MODEL"]
+            )
         case _:
             raise ValueError("Invalid language engine")
 
