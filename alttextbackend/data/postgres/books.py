@@ -1,9 +1,13 @@
 import uuid
 
+
 try:
     from .config import Database
 except ImportError:
     from config import Database
+
+from django.db import connection
+
 
 """
 BOOKS DATABASE ATTRIBUTES
@@ -17,11 +21,10 @@ BOOKS DATABASE ATTRIBUTES
 
 
 def createBookTable():
-    db = Database()
     query = "CREATE TABLE books (id varchar(255) NOT NULL PRIMARY KEY, title varchar(255), size varchar(255), status varchar(255), numImages int, coverExt varchar(255));"
-    db.sendQuery(query)
-    db.commit()
-    db.close()
+    with connection.cursor() as cursor:
+        cursor.execute(query)
+        return cursor.fetchall()
 
 
 def jsonifyBook(book: tuple):
