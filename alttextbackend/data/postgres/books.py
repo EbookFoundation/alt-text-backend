@@ -1,12 +1,17 @@
 import uuid
+import os
+import django
+import sys
 
 
-try:
-    from .config import Database
-except ImportError:
-    from config import Database
+current_script_path = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.join(current_script_path, '..', '..', '..')
+sys.path.insert(0, os.path.abspath(project_root))
 
-from django.db import connection
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', "alttextbackend.settings")
+django.setup()
+
+from alttextbackend.data.postgres.models import Book
 
 
 """
@@ -18,14 +23,6 @@ BOOKS DATABASE ATTRIBUTES
     numImages: int
     coverExt: str
 """
-
-
-def createBookTable():
-    query = "CREATE TABLE books (id varchar(255) NOT NULL PRIMARY KEY, title varchar(255), size varchar(255), status varchar(255), numImages int, coverExt varchar(255));"
-    with connection.cursor() as cursor:
-        cursor.execute(query)
-        return cursor.fetchall()
-
 
 def jsonifyBook(book: tuple):
     return {
@@ -39,37 +36,34 @@ def jsonifyBook(book: tuple):
 
 
 def getBook(id: str):
-    db = Database()
-    query = "SELECT * FROM books WHERE id = %s"
-    params = (id,)
-    db.sendQuery(query, params)
-    book = db.fetchOne()
-    db.close()
-    return book
+    book_tuple = Book.objects.filter(id=id).values_list(
+        'id', 'title', 'size', 'status', 'numImages', 'coverExt', named=False
+    ).first()
+
+    # Check if a book was found; if not, return None
+    if book_tuple is None:
+        return None
+
+    return book_tuple
 
 
 def getBooks(titleQ: str = None, limit: int = None, skip: int = None):
-    db = Database()
-    params = []
-    query = "SELECT * FROM books"
-
+    books_query = Book.objects.all()
+    
+    # Filter by title if a title query is provided
     if titleQ:
-        lowerTitleQ = f"%{titleQ.lower()}%"
-        query += " WHERE LOWER(title) LIKE %s"
-        params.append(lowerTitleQ)
-
-    if limit is not None:
-        query += " LIMIT %s"
-        params.append(limit)
-
+        books_query = books_query.filter(title__icontains=titleQ)
+    
+    # Apply limit and skip (offset) if provided
     if skip is not None:
-        query += " OFFSET %s"
-        params.append(skip)
-
-    db.sendQuery(query, params)
-    books = db.fetchAll()
-    db.close()
-    return books
+        books_query = books_query[skip:]  # Skip the first `skip` records
+    if limit is not None:
+        books_query = books_query[:limit]  # Take `limit` records from the query set
+    
+    # Execute the query and fetch the results
+    books = books_query.values_list('id', 'title', 'size', 'status', 'numImages', 'coverExt', flat=False)
+    
+    return list(books)
 
 
 def addBook(
@@ -83,48 +77,30 @@ def addBook(
     if id == None:
         id = str(uuid.uuid4())
 
-    db = Database()
-    query = "INSERT INTO books (id, title, status, numimages, size, coverext) VALUES (%s, %s, %s, %s, %s, %s);"
-    params = (id, title, status, numImages, size, coverExt)
-    db.sendQuery(query, params)
-    db.commit()
-    db.close()
+    newBook = Book(
+        id=id,
+        title=title,
+        size=size,
+        numImages=numImages,
+        status=status,
+        coverExt=coverExt
+    )
+    newBook.save()
     return getBook(id)
 
 
 def deleteBook(id: str):
-    db = Database()
-    query = "DELETE FROM books WHERE id = %s"
-    params = (id,)
-    db.sendQuery(query, params)
-    db.commit()
-    db.close()
-
+    myBook = Book.objects.get(id=id)
+    myBook.delete()
 
 def updateBook(id: str, title: str = None, status: str = None, coverExt: str = None):
-    db = Database()
+    update_fields = {}
+    if title is not None:
+        update_fields['title'] = title
+    if status is not None:
+        update_fields['status'] = status
+    if coverExt is not None:
+        update_fields['coverExt'] = coverExt
 
-    if title or status or coverExt:
-        params = []
-        query = "UPDATE books SET"
-
-        if title:
-            query += " title = %s,"
-            params.append(title)
-
-        if status:
-            query += " status = %s,"
-            params.append(status)
-
-        if coverExt:
-            query += " coverext = %s,"
-            params.append(coverExt)
-
-        query = query[:-1]
-
-        query += " WHERE id = %s"
-        params.append(id)
-        db.sendQuery(query, params)
-        db.commit()
-
-    db.close()
+    if update_fields:
+        Book.objects.filter(id=id).update(**update_fields)

@@ -1,7 +1,17 @@
-try:
-    from .config import Database
-except ImportError:
-    from config import Database
+import sys
+import os
+import django
+
+
+current_script_path = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.join(current_script_path, '..', '..', '..')
+sys.path.insert(0, os.path.abspath(project_root))
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', "alttextbackend.settings")
+django.setup()
+
+from alttextbackend.data.postgres.models import Image, Book
+
 
 """
 IMAGE DATABASE ATTRIBUTES
@@ -18,15 +28,6 @@ IMAGE DATABASE ATTRIBUTES
     afterContext: str
     additionalContext: str
 """
-
-
-def createImageTable():
-    db = Database()
-    query = "CREATE TABLE images (bookid varchar(255) NOT NULL, src varchar(255) NOT NULL, hash varchar(255), status varchar(255), alt varchar(1000), originalAlt varchar(1000), genAlt varchar(1000), genImageCaption varchar(1000), ocr varchar(1000), beforeContext varchar(2000), afterContext varchar(2000), additionalContext varchar(1000), CONSTRAINT PK_Image PRIMARY KEY (bookid, src), FOREIGN KEY (bookid) REFERENCES books(id) ON DELETE CASCADE);"
-    db.sendQuery(query)
-    db.commit()
-    db.close()
-
 
 def jsonifyImage(image: tuple):
     return {
@@ -46,33 +47,39 @@ def jsonifyImage(image: tuple):
 
 
 def getImageByBook(bookid: str, src: str):
-    db = Database()
-    query = "SELECT * FROM images WHERE bookid = %s AND src = %s"
-    params = (bookid, src)
-    db.sendQuery(query, params)
-    image = db.fetchOne()
-    db.close
-    return image
+    book = Book.objects.get(id=bookid)
+    image_tuple = Image.objects.filter(book=book, src=src).values_list(
+        'book_id', 'src', 'hash', 'status', 'alt', 'originalAlt',
+        'genAlt', 'genImageCaption', 'ocr', 'beforeContext', 
+        'afterContext', 'additionalContext', named=False
+    ).first()
+
+    # Check if an image was found; if not, return None
+    if image_tuple is None:
+        return None
+
+    return image_tuple
 
 
 def getImagesByBook(bookid: str):
-    db = Database()
-    query = "SELECT * FROM images WHERE bookid = %s"
-    params = (bookid,)
-    db.sendQuery(query, params)
-    images = db.fetchAll()
-    db.close()
-    return images
+    book = Book.objects.get(id=bookid)
+    images_tuples = Image.objects.filter(book=book).values_list(
+        'book_id', 'src', 'hash', 'status', 'alt', 'originalAlt',
+        'genAlt', 'genImageCaption', 'ocr', 'beforeContext', 
+        'afterContext', 'additionalContext', named=False
+    )
+
+    return list(images_tuples)
 
 
 def getImagesByHash(hash: str):
-    db = Database()
-    query = "SELECT * FROM images WHERE hash = %s"
-    params = (hash,)
-    db.sendQuery(query, params)
-    images = db.fetchAll()
-    db.close()
-    return images
+    images_tuples = Image.objects.filter(hash=hash).values_list(
+        'book_id', 'src', 'hash', 'status', 'alt', 'originalAlt',
+        'genAlt', 'genImageCaption', 'ocr', 'beforeContext', 
+        'afterContext', 'additionalContext', named=False
+    )
+
+    return list(images_tuples)
 
 
 def addImage(
@@ -89,53 +96,42 @@ def addImage(
     afterContext: str = None,
     additionalContext: str = None,
 ):
-    db = Database()
-    query = "INSERT INTO images (bookid, src, hash, status, alt, originalalt, genalt, genimagecaption, ocr, beforecontext, aftercontext, additionalcontext) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"
-    if status != "available" and status != "processing":
-        status = "available"
-    if alt is not None:
-        alt = alt[:1000]
-    if originalAlt is not None:
-        originalAlt = originalAlt[:1000]
-    if genAlt is not None:
-        genAlt = genAlt[:1000]
-    if genImageCaption is not None:
-        genImageCaption = genImageCaption[:1000]
-    if ocr is not None:
-        ocr = ocr[:1000]
-    if beforeContext is not None:
-        beforeContext = beforeContext[:2000]
-    if afterContext is not None:
-        afterContext = afterContext[:2000]
-    if additionalContext is not None:
-        additionalContext = additionalContext[:1000]
-    params = (
-        bookid,
-        src,
-        hash,
-        status,
-        alt,
-        originalAlt,
-        genAlt,
-        genImageCaption,
-        ocr,
-        beforeContext,
-        afterContext,
-        additionalContext,
+    status = status if status in ["available", "processing"] else "available"
+
+    # Truncate strings to their maximum allowed length based on the model's definitions
+    alt = alt[:1000] if alt is not None else None
+    originalAlt = originalAlt[:1000] if originalAlt is not None else None
+    genAlt = genAlt[:1000] if genAlt is not None else None
+    genImageCaption = genImageCaption[:1000] if genImageCaption is not None else None
+    ocr = ocr[:1000] if ocr is not None else None
+    beforeContext = beforeContext[:2000] if beforeContext is not None else None
+    afterContext = afterContext[:2000] if afterContext is not None else None
+    additionalContext = additionalContext[:1000] if additionalContext is not None else None
+
+    book_instance = Book.objects.get(id=bookid)
+
+    # Create and save the new Image instance
+    new_image = Image.objects.create(
+        book=book_instance,
+        src=src,
+        hash=hash,
+        status=status,
+        alt=alt,
+        originalAlt=originalAlt,
+        genAlt=genAlt,
+        genImageCaption=genImageCaption,
+        ocr=ocr,
+        beforeContext=beforeContext,
+        afterContext=afterContext,
+        additionalContext=additionalContext,
     )
-    db.sendQuery(query, params)
-    db.commit()
-    db.close()
-    return getImageByBook(bookid, src)
+
+    return new_image
 
 
 def deleteImage(bookid: str, src: str):
-    db = Database()
-    query = "DELETE FROM images WHERE bookid = %s AND src = %s;"
-    params = (bookid, src)
-    db.sendQuery(query, params)
-    db.commit()
-    db.close()
+    book = Book.objects.get(id=bookid)
+    Image.objects.filter(book=book, src=src).delete()
 
 
 def updateImage(
@@ -150,59 +146,25 @@ def updateImage(
     afterContext: str = None,
     additionalContext: str = None,
 ):
-    db = Database()
+    update_fields = {}
+    if status is not None:
+        update_fields['status'] = status
+    if alt is not None:
+        update_fields['alt'] = alt
+    if genAlt is not None:
+        update_fields['genAlt'] = genAlt
+    if genImageCaption is not None:
+        update_fields['genImageCaption'] = genImageCaption
+    if ocr is not None:
+        update_fields['ocr'] = ocr
+    if beforeContext is not None:
+        update_fields['beforeContext'] = beforeContext
+    if afterContext is not None:
+        update_fields['afterContext'] = afterContext
+    if additionalContext is not None:
+        update_fields['additionalContext'] = additionalContext
 
-    if (
-        status
-        or alt
-        or genAlt
-        or genImageCaption
-        or ocr
-        or beforeContext
-        or afterContext
-        or additionalContext
-    ):
-        params = []
-        query = "UPDATE images SET"
-
-        if status:
-            query += " status = %s,"
-            params.append(status)
-
-        if alt:
-            query += " alt = %s,"
-            params.append(alt)
-
-        if genAlt:
-            query += " genalt = %s,"
-            params.append(genAlt)
-
-        if genImageCaption:
-            query += " genimagecaption = %s,"
-            params.append(genImageCaption)
-
-        if ocr:
-            query += " ocr = %s,"
-            params.append(ocr)
-
-        if beforeContext:
-            query += " beforecontext = %s,"
-            params.append(beforeContext)
-
-        if afterContext:
-            query += " aftercontext = %s,"
-            params.append(afterContext)
-
-        if additionalContext:
-            query += " additionalcontext = %s,"
-            params.append(additionalContext)
-
-        query = query[:-1]
-
-        query += " WHERE bookid = %s AND src = %s"
-        params.append(bookid)
-        params.append(src)
-        db.sendQuery(query, params)
-        db.commit()
-
-    db.close()
+    # Only execute the update if there are fields to update
+    if update_fields:
+        book = Book.objects.get(id=bookid)
+        Image.objects.filter(book=book, src=src).update(**update_fields)
