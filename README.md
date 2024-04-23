@@ -125,3 +125,57 @@ You can start the server with the following...
 You can see the all routes/features in the `openapi.yaml` file.
 
 We'd recommend to use a visuallizer for it, such as [Swagger](https://editor.swagger.io/).
+
+## Our Mission
+
+The Alt-Text project is developed for the [Free Ebook Foundation](https://ebookfoundation.org/) as a Senior Design Project at [Stevens Institute of Technology](https://www.stevens.edu/).
+
+As Ebooks become a more prominant way to consume written materials, it only becomes more important for them to be accessible to all people. Alternative text (aka alt-text) in Ebooks are used as a way for people to understand images in Ebooks if they are unable to use images as intended (e.g. a visual impaired person using a screen reader to read an Ebook).
+
+While this feature exists, it is still not fully utilized and many Ebooks lack alt-text in some, or even all their images. To illustrate this, the [Gutenberg Project](https://gutenberg.org/), the creator of the Ebook and now a distributor of Public Domain Ebooks, have over 70,000 Ebooks in their collection and of those, there are about 470,000 images without alt-text (not including images with insufficient alt-text).
+
+The Alt-Text project's goal is to use the power of various AI technologies, such as machine vision and large language models, to craft a solution capable of assisting in the creation of alt-text for Ebooks, closing the accessibility gap and improving collections, such as the [Gutenberg Project](https://gutenberg.org/).
+
+### Contact Information
+
+The emails and relevant information of those involved in the Alt-Text project can be found below.
+
+#### The Deveolpers
+
+- Jack Byrne
+  - jbyrne4@stevens.edu
+- David Cruz
+  - da.cruz@aol.com
+  - [David's Website](https://xxmistacruzxx.github.io/)
+  - [David's Github](https://github.com/xxmistacruzxx)
+  - [David's LinkedIn](https://www.linkedin.com/in/davidalexandercruz/)
+- Jared Donnelly
+  - jdonnel3@stevens.edu
+- Ethan Kleschinsky
+  - ekleschi@stevens.edu
+- Tyler Lane
+  - tlane@stevens.edu
+- Carson Lee
+  - clee27@stevens.edu
+
+#### The Client
+
+- Eric Hellman
+  - eric@hellman.net
+
+#### Advisor
+
+- Aaron Klappholz
+  - aklappho@stevens.edu
+
+## APIs, Tools, & Libraries Used
+
+Alt-Text Backend is developed using an assortment of tools...
+
+### Development Tools
+
+Alt-Text Backend is developed using...
+
+- [Django](https://www.djangoproject.com/)
+- [Django Rest Framework](https://www.django-rest-framework.org/)
+- [python-dotenv](https://pypi.org/project/python-dotenv/)
